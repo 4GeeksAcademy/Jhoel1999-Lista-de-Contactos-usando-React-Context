@@ -1,45 +1,93 @@
 const getState = ({ getStore, getActions, setStore }) => {
 	return {
 		store: {
-			demo: [
+			contacts: [],
+			currentContact: {},
+		  },
+	  
+		  actions: {
+			getAgendas: async () => {
+			  const request = await fetch(
+				"https://playground.4geeks.com/contact/agendas/JhoelAgenda",
 				{
-					title: "FIRST",
-					background: "white",
-					initial: "white"
-				},
-				{
-					title: "SECOND",
-					background: "white",
-					initial: "white"
+				  method: "GET",
+				  headers: {
+					"Content-Type": "application/json",
+				  },
 				}
-			]
-		},
-		actions: {
-			// Use getActions to call a function within a fuction
-			exampleFunction: () => {
-				getActions().changeColor(0, "green");
+			  );
+			  const response = await request.json();
+			  setStore({ contacts: response.contacts });
 			},
-			loadSomeData: () => {
-				/**
-					fetch().then().then(data => setStore({ "foo": data.bar }))
-				*/
+	  
+			makeContact: async (userInfo) => {
+			  const request = await fetch(
+				"https://playground.4geeks.com/contact/agendas/JhoelAgenda/contacts",
+				{
+				  method: "POST",
+				  headers: {
+					"Content-Type": "application/json",
+				  },
+				  body: JSON.stringify({
+					name: userInfo.name,
+					phone: userInfo.phone,
+					email: userInfo.email,
+					address: userInfo.address,
+				  }),
+				}
+			  );
+			  const response = await request.json();
+			  const store = getStore();
+			  setStore({ contacts: [...store.contacts, response] });
 			},
-			changeColor: (index, color) => {
-				//get the store
-				const store = getStore();
-
-				//we have to loop the entire demo array to look for the respective index
-				//and change its color
-				const demo = store.demo.map((elm, i) => {
-					if (i === index) elm.background = color;
-					return elm;
-				});
-
-				//reset the global store
-				setStore({ demo: demo });
-			}
-		}
-	};
-};
+	  
+			deleteContac: async (id) => {
+			  const actions = getActions();
+			  try {
+				const request = await fetch(
+				  `https://playground.4geeks.com/contact/agendas/JhoelAgenda/contacts/${id}`,
+				  {
+					method: "DELETE",
+					headers: {
+					  "Content-Type": "application/json",
+					},
+				  }
+				);
+				if (request.status === 204) {
+				  await actions.getAgendas();
+				}
+			  } catch (error) {
+				console.log(error);
+			  }
+			},
+	  
+			updateContac: async (id, userdata) => {
+			  const request = await fetch(
+				`https://playground.4geeks.com/contact/agendas/JhoelAgenda/contacts/${id}`,
+				{
+				  method: `PUT`,
+				  headers: {
+					"Content-Type": "application/json",
+				  },
+				  body: JSON.stringify({
+					name: userdata.name,
+					phone: userdata.phone,
+					email: userdata.email,
+					address: userdata.address,
+				  }),
+				}
+			  );
+			  const response = await request.json();
+			  const actions = getActions();
+			  await actions.getAgendas();
+			},
+	  
+			setCurrentEdit: (userValues) => {
+			  const store = getStore();
+			  setStore({ ...store, currentContact: userValues });
+			},
+		  },
+		};
+	  };
 
 export default getState;
